@@ -4,6 +4,8 @@ MailBoxManager
 Course project during master to realize a mail box manager 
 
 Description du projet
+
+-------------------------
 Cette application doit pouvoir gérer des boites mails et proposer une interface de gestion des
 différents utilisateurs. Les utilisateurs doivent pouvoir lire, envoyer, supprimer des messages
 envoyés dans leur propre boîte mail. Chaque utilisateur a une seule boîte mail et selon les droits
