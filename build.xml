@@ -1,0 +1,152 @@
+<project name="MyProject" default="all" basedir=".">
+    <description>
+        A simple build script.
+    </description>
+  <!-- set global properties for this build -->
+  <!-- set glassfish.home to point to glassfish installation  -->  
+  <property environment="env"/>
+  <property name="glassfish.home" value="${env.GLASSFISH_HOME}"/>
+
+  <property name="entity" value="entity"/>
+  <property name="ejb" value="ejb"/>
+  <property name="client" value="client"/>
+ <property name="build" location="build"/>
+  <property name="testname" value="mailboxSless"/>
+
+  <target name="init">
+    <!-- Create the build directory structure -->
+    <mkdir dir="${entity}"/>
+  <mkdir dir="${build}/${ejb}"/> 
+ <mkdir dir="${build}/${client}"/>
+  <mkdir dir="${build}/${entity}"/>
+    <mkdir dir="./RESTWebService"/>
+    <mkdir dir="./RESTWebService/WEB-INF"/>
+    <mkdir dir="./RESTWebService/WEB-INF/classes"/>
+
+  </target>
+
+  <target name="all">
+    <antcall target="clean"/>
+    <antcall target="build"/>
+    <antcall target="deploy"/>
+  </target>
+
+ <target name="restart" description="restart" depends="init">
+    <antcall target="undeploy"/>
+    <antcall target="build"/>
+    <antcall target="deploy"/>
+  </target>
+  
+   <target name="rebuild" description="rebuild" depends="init">
+    <antcall target="build"/>
+    <antcall target="deploy"/>
+  </target>
+
+  <target name="build" description="build" depends="init">
+    <antcall target="build-entity"/>
+    <antcall target="build-ejb"/>
+    <antcall target="build-client"/>
+    <antcall target="build-jar"/>
+ <antcall target="build-ws"/>
+
+  </target>
+
+  <target name="build-entity"
+        description="Build entity beans" >
+    <javac classpath="${glassfish.home}/lib/javaee.jar" 
+           srcdir="entity"
+           destdir="."
+           includes="FinalUser.java,Box.java,Message.java"/>
+  </target>
+
+  <target name="build-ejb"
+        description="Build ejb jar" >
+    <javac classpath="${glassfish.home}/lib/javaee.jar:./entities.jar" 
+           srcdir="ejb"
+           destdir="."
+           includes="DirectoryManagerBean.java,IDirectoryManager.java,MailBoxManagerBean.java,IMailBoxManager.java, RESTDelegator.java, RESTServlet.java"/>
+   <jar destfile="${build}/${testname}ejb.jar" basedir="${build}/${ejb}"/>
+  </target>
+
+  <target name="build-client" 
+        description="Build client jar" >
+    <javac classpath="${glassfish.home}/lib/javaee.jar" 
+           srcdir="client"
+           destdir="."
+           includes="AdminClient.java,MailBoxClient.java,TestClient.java"/>
+  </target>
+  
+  <target name="build-jar" 
+        description="Build jar archive" >
+    <jar destfile="MicroProjetTestEJB.jar"
+         basedir="."
+	 includes="META-INF/persistence.xml,client/,ejb/,entity/"/>
+  </target>
+
+ <target name="build-ws"
+        description="Build ejb war file for REST web service" depends="build-ejb" >
+    <copy todir="./RESTWebService/WEB-INF/classes" >
+	<fileset dir="." >
+	    <include name="**/*.class"/>
+	</fileset>
+    </copy>
+    <copy todir="./RESTWebService/WEB-INF" >
+	<fileset dir="WEB-INF" >
+	    <include name="*.xml"/>
+	</fileset>
+    </copy>
+    <jar destfile="./${testname}ejb.war" basedir="./RESTWebService/"/>
+  </target>
+  <target name="deploy" 
+          description="deploy">
+    <exec executable="${glassfish.home}/bin/asadmin" 
+          failonerror="true" 
+          vmlauncher="false">
+      <arg line="deploy --retrieve . MicroProjetTestEJB.jar"/>
+    </exec>
+  </target>
+
+
+  <target name="undeploy" 
+          description="undeploy">
+    <exec executable="${glassfish.home}/bin/asadmin" 
+          failonerror="true" 
+          vmlauncher="false">
+      <arg line="undeploy MicroProjetTestEJB"/>
+    </exec>
+  </target>
+
+
+  <target name="admin" 
+          description="execute Admin Client">
+   <java fork="on"
+failonerror="true"
+classname="client.AdminClient">
+   </java>
+  </target>
+
+ <target name="mailbox" 
+          description="execute MailBox Client">
+   <java fork="on"
+failonerror="true"
+classname="client.MailBoxClient">
+   </java>
+  </target>
+
+ <target name="test" 
+          description="execute Test Client">
+   <java fork="on"
+failonerror="true"
+classname="client.TestClient">
+   </java>
+  </target>
+
+  <target name="clean" 
+          description="clean up" >
+    <delete file="MicroProjetTestEJB.jar"/>
+     <delete dir="${entity}/*.class"/>
+    <delete dir="${ejb}/*.class"/>
+    <delete dir="${client}/*.class"/>
+  </target>
+
+</project>
